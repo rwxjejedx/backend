@@ -68,12 +68,11 @@ export const getEventById = async (req: Request, res: Response) => {
 
 /**
  * POST /api/events
- * Create event
+ * Create event (Organizer only)
  */
-export const createEvent = async (req: Request, res: Response) => {
+export const createEvent = async (req: any, res: Response) => {
   try {
     const {
-      organizerId,
       name,
       price,
       totalSeats,
@@ -81,13 +80,20 @@ export const createEvent = async (req: Request, res: Response) => {
       endDate,
     } = req.body;
 
+    // VALIDASI BASIC
+    if (!name || !price || !totalSeats || !startDate || !endDate) {
+      return res.status(400).json({
+        message: "Field tidak lengkap",
+      });
+    }
+
     const event = await prisma.event.create({
       data: {
-        organizerId,
+        organizerId: req.user.userId, 
         name,
-        price,
-        totalSeats,
-        availableSeats: totalSeats,
+        price: Number(price),
+        totalSeats: Number(totalSeats),
+        availableSeats: Number(totalSeats),
         startDate: new Date(startDate),
         endDate: new Date(endDate),
       },
@@ -104,3 +110,4 @@ export const createEvent = async (req: Request, res: Response) => {
     });
   }
 };
+
