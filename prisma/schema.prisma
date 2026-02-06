@@ -32,6 +32,7 @@ model User {
   password     String   @default("temporary_password")
   role         UserRole @default(customer)
   referralCode String?  @unique @map("referral_code")
+  avatarUrl    String?  @map("avatar_url")
 
   // Self-relation untuk Referral System
   referredById String? @map("referred_by_id") @db.Uuid
@@ -46,6 +47,7 @@ model User {
 
   @@map("users")
 }
+
 
 model UserPoint {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
