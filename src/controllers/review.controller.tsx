@@ -2,67 +2,74 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 
-// Create Review
-export const createReview = async (req: Request, res: Response) => {
+// Ambil Review Saya
+export const getMyReviews = async (req: any, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
-    const { transactionId, rating, comment } = req.body;
+    const userId = req.user.userId;
 
-    // Validasi input
-    if (!transactionId || !rating) {
-      return res.status(400).json({
-        message: "Transaction ID dan rating harus diisi",
-      });
-    }
-
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({
-        message: "Rating harus antara 1-5",
-      });
-    }
-
-    // Cek apakah transaksi milik user
-    const transaction = await prisma.transaction.findFirst({
+    const reviews = await prisma.review.findMany({
       where: {
-        id: transactionId,
-        customerId: userId,
-        status: "DONE",
+        transaction: {
+          customerId: userId,
+        },
       },
       include: {
-        review: true,
+        transaction: {
+          include: {
+            event: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true,
+                location: true,
+                startDate: true,
+              },
+            },
+          },
+        },
       },
+      orderBy: { id: "desc" },
     });
 
-    if (!transaction) {
-      return res.status(404).json({
-        message: "Transaksi tidak ditemukan atau belum selesai",
-      });
+    const formattedData = reviews.map((rev) => ({
+      id: rev.id,
+      rating: rev.rating,
+      comment: rev.comment,
+      createdAt: rev.createdAt, // Menggunakan createdAt dari transaksi
+      event: rev.transaction.event,
+    }));
+
+    res.json({ success: true, data: formattedData });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal memuat ulasan Anda" });
+  }
+};
+
+// Create Review (Pastikan ini juga diekspor)
+export const createReview = async (req: any, res: Response) => {
+  try {
+    const userId = req.user.userId;
+    const { transactionId, rating, comment } = req.body;
+
+    const transaction = await prisma.transaction.findFirst({
+      where: { id: transactionId, customerId: userId, status: "DONE" },
+      include: { review: true }
+    });
+
+    if (!transaction || transaction.review) {
+      return res.status(400).json({ message: "Transaksi tidak valid atau sudah direview" });
     }
 
-    // Cek apakah sudah ada review
-    if (transaction.review) {
-      return res.status(400).json({
-        message: "Anda sudah memberikan review untuk transaksi ini",
-      });
-    }
-
-    // Buat review
     const review = await prisma.review.create({
       data: {
         transactionId,
-        rating,
+        rating: Number(rating),
         comment: comment || null,
       },
     });
 
-    res.status(201).json({
-      message: "Review berhasil dibuat",
-      data: review,
-    });
+    res.status(201).json({ message: "Review berhasil dibuat", data: review });
   } catch (error) {
-    console.error("Create review error:", error);
-    res.status(500).json({
-      message: "Terjadi kesalahan server",
-    });
+    res.status(500).json({ message: "Gagal membuat ulasan" });
   }
 };

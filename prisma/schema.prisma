@@ -27,6 +27,15 @@ enum TransactionStatus {
   CANCELED
 }
 
+enum EventCategory {
+  MUSIC
+  NIGHTLIFE
+  WORKSHOP
+  FOOD
+  CONFERENCE
+  SPORTS
+}
+
 // --- 1. User Tables ---
 
 model User {
@@ -79,25 +88,27 @@ model UserCoupon {
 
 model Event {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizerId     String   @map("organizer_id") @db.Uuid
+  organizerId      String   @map("organizer_id") @db.Uuid
   name            String
   
-  // Tambahkan di sini
-  description     String?  @db.Text
-  location        String   @default("TBA") // Tempat acara (misal: "Jakarta Convention Center")
-  venue           String   @default("TBA")
-  imageUrl        String?  // Path file foto banner
+  // Tambahkan field category di sini
+  category        EventCategory @default(WORKSHOP) 
   
-  price           Decimal  @db.Decimal(12, 2)
-  totalSeats      Int      @map("total_seats")
-  availableSeats  Int      @map("available_seats")
-  startDate       DateTime @map("start_date") @db.Timestamptz
-  endDate         DateTime @map("end_date") @db.Timestamptz
+  description      String?  @db.Text
+  location         String   @default("TBA")
+  venue            String   @default("TBA")
+  imageUrl         String?  
+  
+  price            Decimal  @db.Decimal(12, 2)
+  totalSeats       Int      @map("total_seats")
+  availableSeats   Int      @map("available_seats")
+  startDate        DateTime @map("start_date") @db.Timestamptz
+  endDate          DateTime @map("end_date") @db.Timestamptz
 
   // Relations
-  organizer    User           @relation("OrganizerEvents", fields: [organizerId], references: [id])
-  vouchers     EventVoucher[]
-  transactions Transaction[]
+  organizer        User           @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  vouchers         EventVoucher[]
+  transactions     Transaction[]
 
   @@map("events")
 }
@@ -137,13 +148,13 @@ model Transaction {
 }
 
 model Review {
-  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  transactionId String @unique @map("transaction_id") @db.Uuid
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionId String   @unique @map("transaction_id") @db.Uuid
+  rating        Int
+  comment       String?
+  createdAt     DateTime @default(now()) @map("created_at") // Tambahkan ini
 
-  rating  Int
-  comment String?
-
-  transaction Transaction @relation(fields: [transactionId], references: [id])
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 
   @@map("reviews")
 }

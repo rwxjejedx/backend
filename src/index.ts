@@ -43,8 +43,8 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // --- Routes ---
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);       // Khusus Login & Register
+app.use("/api/users", userRoutes);      // Khusus Profile, Avatar, & Password
 app.use("/api/events", eventRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/dashboard", dashboardRoutes);
