@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { prisma } from "../prisma.js";
+import { prisma } from "./prisma.js";
 
 // Menjalankan pengecekan setiap 1 menit
 export const initCronJobs = () => {

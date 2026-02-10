@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { prisma } from "../prisma.js";
+import { prisma } from "../lib/prisma.js";
 import { verifyToken } from "../middleware/aut.js";
 
 const router = Router();

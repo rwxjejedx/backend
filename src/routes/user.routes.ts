@@ -1,21 +1,26 @@
 import { Router } from "express";
-import { prisma } from "../prisma.js";
+import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { verifyToken } from "../middleware/aut.js";
 import multer from "multer";
 import path from "path";
+import fs from 'fs';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "rahasia_eventix_2026";
-
+// Tambahkan pengecekan folder di bagian atas
+const uploadDir = 'uploads';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 /* =========================
    MULTER CONFIG (AVATAR)
 ========================= */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, "uploads/avatars/");
   },
   filename: (req, file, cb) => {
     cb(null, `avatar-${Date.now()}-${file.originalname}`);
@@ -125,28 +130,34 @@ router.patch("/me", verifyToken, async (req: any, res) => {
 router.patch(
   "/me/avatar",
   verifyToken,
-  upload.single("avatar"),
+  upload.single("avatar"), // Key harus "avatar"
   async (req: any, res) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "File wajib diunggah" });
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "File wajib diunggah" });
+      }
+
+      const updated = await prisma.user.update({
+        where: { id: req.user.userId },
+        data: {
+          avatarUrl: `/uploads/avatars/${req.file.filename}`,
+        },
+        select: {
+          id: true,
+          email: true,
+          role: true, // Sertakan role
+          referralCode: true, // Sertakan referralCode
+          avatarUrl: true,
+        },
+      });
+
+      res.json({
+        message: "Avatar updated",
+        data: updated, // Kirim object user lengkap
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Server error saat upload avatar" });
     }
-
-    const updated = await prisma.user.update({
-      where: { id: req.user.userId },
-      data: {
-        avatarUrl: `/uploads/${req.file.filename}`,
-      },
-      select: {
-        id: true,
-        email: true,
-        avatarUrl: true,
-      },
-    });
-
-    res.json({
-      message: "Avatar updated",
-      data: updated,
-    });
   }
 );
 

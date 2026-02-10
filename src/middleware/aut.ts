@@ -1,3 +1,4 @@
+// backend/src/middleware/auth.ts
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
@@ -21,6 +22,22 @@ export const verifyToken = (req: any, res: Response, next: NextFunction) => {
 export const isOrganizer = (req: any, res: Response, next: NextFunction) => {
   if (req.user.role !== "organizer") {
     return res.status(403).json({ message: "Akses khusus Organizer!" });
+  }
+  next();
+};
+
+// Tambahan: middleware untuk user biasa (opsional)
+export const isUser = (req: any, res: Response, next: NextFunction) => {
+  if (req.user.role !== "user" && req.user.role !== "organizer") {
+    return res.status(403).json({ message: "Akses ditolak!" });
+  }
+  next();
+};
+
+// Tambahan: middleware untuk admin (jika ada role admin)
+export const isAdmin = (req: any, res: Response, next: NextFunction) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Akses khusus Admin!" });
   }
   next();
 };

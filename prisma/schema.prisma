@@ -1,9 +1,12 @@
+// backend/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // --- Enums ---
@@ -48,7 +51,6 @@ model User {
   @@map("users")
 }
 
-
 model UserPoint {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String   @map("user_id") @db.Uuid
@@ -76,14 +78,21 @@ model UserCoupon {
 // --- 2. Event & Promotion Tables ---
 
 model Event {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizerId    String   @map("organizer_id") @db.Uuid
-  name           String
-  price          Decimal  @db.Decimal(12, 2)
-  totalSeats     Int      @map("total_seats")
-  availableSeats Int      @map("available_seats")
-  startDate      DateTime @map("start_date") @db.Timestamptz
-  endDate        DateTime @map("end_date") @db.Timestamptz
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizerId     String   @map("organizer_id") @db.Uuid
+  name            String
+  
+  // Tambahkan di sini
+  description     String?  @db.Text
+  location        String   @default("TBA") // Tempat acara (misal: "Jakarta Convention Center")
+  venue           String   @default("TBA")
+  imageUrl        String?  // Path file foto banner
+  
+  price           Decimal  @db.Decimal(12, 2)
+  totalSeats      Int      @map("total_seats")
+  availableSeats  Int      @map("available_seats")
+  startDate       DateTime @map("start_date") @db.Timestamptz
+  endDate         DateTime @map("end_date") @db.Timestamptz
 
   // Relations
   organizer    User           @relation("OrganizerEvents", fields: [organizerId], references: [id])

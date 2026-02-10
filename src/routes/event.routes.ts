@@ -1,25 +1,67 @@
 import { Router } from "express";
-import { getEvents, getEventById, createEvent } from "../controllers/event.controller.js";
-import { verifyToken, isOrganizer } from "../middleware/aut.js";
+import { 
+  getEvents, 
+  getEventById, 
+  createEvent, 
+  getOrganizerEvents,
+  updateEvent, // Import fungsi update
+  deleteEvent  // Import fungsi delete
+} from "../controllers/event.controller.js";
+import { verifyToken, isOrganizer } from "../middleware/aut.js"; 
+import { uploadEvent } from "../middleware/uploadEvent.js";
 
 const router = Router();
 
-/**
- * PUBLIC
- * Get all events (event browsing)
- */
+/* =========================
+   PUBLIC ROUTES
+   ========================= */
+
+// Menampilkan semua event di halaman Home
 router.get("/", getEvents);
 
-/**
- * PUBLIC
- * Get event detail by ID
- */
+// Ambil list event khusus milik organizer yang sedang login
+// WAJIB di atas /:id agar "organizer" tidak terbaca sebagai UUID
+router.get("/organizer", verifyToken, isOrganizer, getOrganizerEvents);
+
+// Detail event berdasarkan ID
 router.get("/:id", getEventById);
 
+
+/* =========================
+   PROTECTED ROUTES (Organizer Only)
+   ========================= */
+
 /**
- * PROTECTED
- * Create event (Organizer only)
+ * POST: Membuat event baru
  */
-router.post("/", verifyToken, isOrganizer, createEvent);
+router.post(
+  "/", 
+  verifyToken, 
+  isOrganizer, 
+  uploadEvent.single("eventImage"), 
+  createEvent
+);
+
+/**
+ * PUT: Memperbarui data event yang sudah ada
+ * Menggunakan uploadEvent.single agar bisa ganti banner
+ */
+router.put(
+  "/:id",
+  verifyToken,
+  isOrganizer,
+  uploadEvent.single("eventImage"),
+  updateEvent
+);
+
+/**
+ * DELETE: Menghapus event
+ */
+router.delete(
+  "/:id",
+  verifyToken,
+  isOrganizer,
+  deleteEvent
+);
 
 export default router;
